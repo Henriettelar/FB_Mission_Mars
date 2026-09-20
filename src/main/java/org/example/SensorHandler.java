@@ -27,15 +27,52 @@ public class SensorHandler implements Runnable {
             String line;
             while ((line = reader.readLine()) != null) {
                 if (line.isBlank()) {
+                    sensorLog.log("Invalid message from " + clientAddress + ": empty message");
+                    writer.println("ERROR: Empty message");
                     continue;
                 }
-                sensorLog.log("Received from " + clientAddress + ": " + line);
-                writer.println("ACK: " + line);
+
+                try {
+                    ParsedMessage parsed = parseMessage(line);
+                    sensorLog.log("Received from " + clientAddress + ": type=" + parsed.sensorType().getType() + ", value=" + parsed.value());
+                    writer.println("ACK: " + parsed.sensorType().getType() + ":" + parsed.valueText());
+                } catch (NumberFormatException e) {
+                    sensorLog.log("Invalid numeric value from " + clientAddress + ": " + line);
+                    writer.println("ERROR: Invalid numeric value");
+                } catch (IllegalArgumentException e) {
+                    sensorLog.log("Invalid message from " + clientAddress + ": " + line + " (" + e.getMessage() + ")");
+                    writer.println("ERROR: " + e.getMessage());
+                }
             }
 
             sensorLog.log("Client disconnected: " + clientAddress);
         } catch (IOException e) {
             sensorLog.log("Connection error for client " + clientSocket.getRemoteSocketAddress() + ": " + e.getMessage());
         }
+    }
+
+    static ParsedMessage parseMessage(String message) {
+        if (message == null || message.isBlank()) {
+            throw new IllegalArgumentException("Message cannot be blank");
+        }
+
+        String trimmed = message.trim();
+        int separatorIndex = trimmed.indexOf(':');
+        if (separatorIndex <= 0 || separatorIndex == trimmed.length() - 1 || trimmed.indexOf(':', separatorIndex + 1) != -1) {
+            throw new IllegalArgumentException("Message must match TYPE:VALUE");
+        }
+
+        String typePart = trimmed.substring(0, separatorIndex).trim();
+        String valuePart = trimmed.substring(separatorIndex + 1).trim();
+        if (valuePart.isEmpty()) {
+            throw new IllegalArgumentException("Message must contain a value");
+        }
+
+        SensorType sensorType = SensorType.fromMessageType(typePart);
+        double value = Double.parseDouble(valuePart);
+        return new ParsedMessage(sensorType, value, valuePart);
+    }
+
+    record ParsedMessage(SensorType sensorType, double value, String valueText) {
     }
 }
