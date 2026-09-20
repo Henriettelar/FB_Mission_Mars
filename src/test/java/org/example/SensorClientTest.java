@@ -19,22 +19,22 @@ class SensorClientTest {
 
     @Test
     void sensorHasFixedTypeWhenCreated() {
-        SensorClient client = new SensorClient(SensorClient.SensorType.TEMPERATURE);
+        SensorClient client = new SensorClient(SensorType.TEMPERATURE);
 
-        assertEquals(SensorClient.SensorType.TEMPERATURE, client.getSensorType());
-        assertEquals("TEMP", client.getSensorType().getCode());
+        assertEquals(SensorType.TEMPERATURE, client.getSensorType());
+        assertEquals("TEMP", client.getSensorType().getType());
     }
 
     @Test
     void generatedReadingUsesExpectedFormatAndRange() {
-        for (SensorClient.SensorType sensorType : SensorClient.SensorType.values()) {
+        for (SensorType sensorType : SensorType.values()) {
             String reading = new SensorClient(sensorType).generateReading();
             String[] parts = reading.split(":");
 
             assertEquals(2, parts.length);
-            assertEquals(sensorType.getCode(), parts[0]);
+            assertEquals(sensorType.getType(), parts[0]);
             double value = Double.parseDouble(parts[1]);
-            assertTrue(sensorType.isInRange(value));
+            assertTrue(new SensorClient(sensorType).isInRange(value, sensorType));
         }
     }
 
@@ -58,7 +58,7 @@ class SensorClientTest {
             });
             serverThread.start();
 
-            try (SensorClient client = new SensorClient(SensorClient.SensorType.TEMPERATURE, "localhost", port)) {
+            try (SensorClient client = new SensorClient(SensorType.TEMPERATURE, "localhost", port)) {
                 client.connect();
                 client.sendReading();
             }
@@ -67,7 +67,7 @@ class SensorClientTest {
             assertNotNull(messageRef.get());
             assertTrue(messageRef.get().startsWith("TEMP:"));
             double value = Double.parseDouble(messageRef.get().substring("TEMP:".length()));
-            assertTrue(SensorClient.SensorType.TEMPERATURE.isInRange(value));
+            assertTrue(new SensorClient(SensorType.TEMPERATURE).isInRange(value, SensorType.TEMPERATURE));
             serverThread.join(1000);
         }
     }
