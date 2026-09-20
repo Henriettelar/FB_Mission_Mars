@@ -36,6 +36,7 @@ public class SensorHandler implements Runnable {
                     ParsedMessage parsed = parseMessage(line);
                     sensorLog.log("Received from " + clientAddress + ": type=" + parsed.sensorType().getType() + ", value=" + parsed.value());
                     writer.println("ACK: " + parsed.sensorType().getType() + ":" + parsed.valueText());
+                    System.out.println("[" + parsed.sensorType().getType() + ":" + parsed.valueText() + "]");
                 } catch (NumberFormatException e) {
                     sensorLog.log("Invalid numeric value from " + clientAddress + ": " + line);
                     writer.println("ERROR: Invalid numeric value");
