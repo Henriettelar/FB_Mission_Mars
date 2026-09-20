@@ -46,8 +46,8 @@ public class SensorClient implements AutoCloseable, Runnable {
     }
 
     public String generateReading() {
-        double value = sensorType.generateValue();
-        return sensorType.formatReading(value);
+        double value = generateValue(sensorType);
+        return formatReading(value, sensorType);
     }
 
     public void connect() throws IOException {
@@ -109,36 +109,18 @@ public class SensorClient implements AutoCloseable, Runnable {
         stop();
     }
 
-    public enum SensorType {
-        TEMPERATURE("TEMP", -50.0, 80.0),
-        OXYGEN("O2", 0.0, 100.0),
-        AIR_PRESSURE("PRESSURE", 950.0, 1050.0),
-        CO2("CO2", 300.0, 5000.0);
 
-        private final String code;
-        private final double minValue;
-        private final double maxValue;
 
-        SensorType(String code, double minValue, double maxValue) {
-            this.code = code;
-            this.minValue = minValue;
-            this.maxValue = maxValue;
-        }
 
-        public String getCode() {
-            return code;
-        }
 
-        public double generateValue() {
-            return minValue + (maxValue - minValue) * RANDOM.nextDouble();
-        }
-
-        public boolean isInRange(double value) {
-            return value >= minValue && value <= maxValue;
-        }
-
-        public String formatReading(double value) {
-            return code + ":" + String.format(Locale.US, "%.1f", value);
-        }
+    public double generateValue(SensorType sensorType) {
+        return sensorType.getMinValue() + (sensorType.getMaxValue() - sensorType.getMinValue()) * RANDOM.nextDouble();
     }
+    public boolean isInRange(double value, SensorType sensorType) {
+        return value >= sensorType.getMinValue() && value <= sensorType.getMaxValue();
+    }
+    public String formatReading(double value, SensorType sensorType) {
+        return sensorType.getType() + ":" + String.format(Locale.US, "%.1f", value);
+    }
+
 }
