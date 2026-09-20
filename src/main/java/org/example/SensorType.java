@@ -28,4 +28,19 @@ public enum SensorType {
         return maxValue;
     }
 
+    public static SensorType fromMessageType(String messageType) {
+        if (messageType == null || messageType.isBlank()) {
+            throw new IllegalArgumentException("Sensor type is missing");
+        }
+
+        String normalized = messageType.trim().toUpperCase();
+        return switch (normalized) {
+            case "TEMP", "TEMPERATURE" -> TEMPERATURE;
+            case "O2", "OXYGEN" -> OXYGEN;
+            case "PRESSURE", "TRYK", "AIR_PRESSURE" -> AIR_PRESSURE;
+            case "CO2" -> CO2;
+            default -> throw new IllegalArgumentException("Unknown sensor type: " + messageType);
+        };
+    }
+
 }

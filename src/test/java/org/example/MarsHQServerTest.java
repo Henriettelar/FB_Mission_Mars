@@ -25,9 +25,9 @@ class MarsHQServerTest {
                  PrintWriter writer = new PrintWriter(client.getOutputStream(), true);
                  BufferedReader reader = new BufferedReader(new InputStreamReader(client.getInputStream()))) {
 
-                writer.println("TEMP=22.1");
+                writer.println("TEMP:22.1");
 
-                assertEquals("ACK: TEMP=22.1", reader.readLine());
+                assertEquals("ACK: TEMP:22.1", reader.readLine());
             }
 
             assertTrue(sensorLog.getMessages().stream().anyMatch(message -> message.contains("Received from")));
@@ -54,11 +54,11 @@ class MarsHQServerTest {
                  BufferedReader firstReader = new BufferedReader(new InputStreamReader(firstClient.getInputStream()));
                  BufferedReader secondReader = new BufferedReader(new InputStreamReader(secondClient.getInputStream()))) {
 
-                firstWriter.println("TEMP=21.0");
-                secondWriter.println("PRESSURE=1012");
+                firstWriter.println("TEMP:21.0");
+                secondWriter.println("PRESSURE:1012");
 
-                assertEquals("ACK: TEMP=21.0", firstReader.readLine());
-                assertEquals("ACK: PRESSURE=1012", secondReader.readLine());
+                assertEquals("ACK: TEMP:21.0", firstReader.readLine());
+                assertEquals("ACK: PRESSURE:1012", secondReader.readLine());
             }
 
             assertTrue(sensorLog.getMessages().stream().filter(message -> message.contains("Received from")).count() >= 2);
@@ -82,8 +82,8 @@ class MarsHQServerTest {
                  PrintWriter firstWriter = new PrintWriter(firstClient.getOutputStream(), true);
                  BufferedReader firstReader = new BufferedReader(new InputStreamReader(firstClient.getInputStream()))) {
 
-                firstWriter.println("TEMP=23.0");
-                assertEquals("ACK: TEMP=23.0", firstReader.readLine());
+                firstWriter.println("TEMP:23.0");
+                assertEquals("ACK: TEMP:23.0", firstReader.readLine());
                 firstClient.close();
             }
 
@@ -93,8 +93,8 @@ class MarsHQServerTest {
                  PrintWriter writer = new PrintWriter(secondClient.getOutputStream(), true);
                  BufferedReader reader = new BufferedReader(new InputStreamReader(secondClient.getInputStream()))) {
 
-                writer.println("TEMP=24.0");
-                assertEquals("ACK: TEMP=24.0", reader.readLine());
+                writer.println("TEMP:24.0");
+                assertEquals("ACK: TEMP:24.0", reader.readLine());
             }
 
             assertTrue(server.isRunning());

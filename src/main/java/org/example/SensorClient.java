@@ -7,6 +7,7 @@ import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 import java.util.Random;
+import java.util.Scanner;
 
 public class SensorClient implements AutoCloseable, Runnable {
     public static final String DEFAULT_HOST = "localhost";
@@ -107,6 +108,66 @@ public class SensorClient implements AutoCloseable, Runnable {
     @Override
     public void close() throws IOException {
         stop();
+    }
+
+    public static void main(String[] args) throws IOException {
+        String host = DEFAULT_HOST;
+        int port = DEFAULT_PORT;
+
+        if (args.length >= 1 && !args[0].isBlank()) {
+            host = args[0].trim();
+        }
+        if (args.length >= 2 && !args[1].isBlank()) {
+            port = Integer.parseInt(args[1].trim());
+        }
+
+        SensorType sensorType = promptForSensorType();
+        SensorClient client = new SensorClient(sensorType, host, port);
+
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            try {
+                client.close();
+            } catch (IOException ignored) {
+            }
+        }));
+
+        System.out.println("Starting sensor client with type " + sensorType.getType() + " on " + host + ":" + port);
+        client.start();
+    }
+
+    static SensorType resolveSensorTypeChoice(String input) {
+        if (input == null || input.isBlank()) {
+            throw new IllegalArgumentException("Sensor type is missing");
+        }
+
+        String trimmed = input.trim();
+        return switch (trimmed) {
+            case "1" -> SensorType.TEMPERATURE;
+            case "2" -> SensorType.OXYGEN;
+            case "3" -> SensorType.AIR_PRESSURE;
+            case "4" -> SensorType.CO2;
+            default -> SensorType.fromMessageType(trimmed);
+        };
+    }
+
+    private static SensorType promptForSensorType() {
+        Scanner scanner = new Scanner(System.in);
+
+        while (true) {
+            System.out.println("Choose sensor type:");
+            System.out.println("1) TEMPERATURE (TEMP)");
+            System.out.println("2) OXYGEN (O2)");
+            System.out.println("3) AIR_PRESSURE (PRESSURE)");
+            System.out.println("4) CO2");
+            System.out.print("Enter choice (number or type): ");
+
+            String choice = scanner.nextLine();
+            try {
+                return resolveSensorTypeChoice(choice);
+            } catch (IllegalArgumentException e) {
+                System.out.println("Invalid choice: " + e.getMessage());
+            }
+        }
     }
 
 
