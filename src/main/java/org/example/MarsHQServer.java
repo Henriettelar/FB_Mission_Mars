@@ -27,15 +27,24 @@ public class MarsHQServer implements AutoCloseable {
         this.executorService = Executors.newFixedThreadPool(THREAD_POOL_SIZE);
     }
 
+    public static void main(String[] args) throws IOException {
+        try (MarsHQServer server = new MarsHQServer(DEFAULT_PORT)) {
+            server.start();
+        }
+    }
+
     public void start() throws IOException {
+        if (executorService.isShutdown()) {
+            throw new IllegalStateException("Server has been stopped and cannot be restarted.");
+        }
         if (running.getAndSet(true)) {
             throw new IllegalStateException("Server is already running.");
         }
 
-        serverSocket = new ServerSocket(port);
-        sensorLog.log("Mars HQ server started on port " + serverSocket.getLocalPort());
 
         try {
+            serverSocket = new ServerSocket(port);
+            sensorLog.log("Mars HQ server started on port " + serverSocket.getLocalPort());
             while (running.get()) {
                 Socket clientSocket = serverSocket.accept();
                 executorService.submit(new SensorHandler(clientSocket, sensorLog));
@@ -43,6 +52,11 @@ public class MarsHQServer implements AutoCloseable {
         } catch (IOException e) {
             if (running.get()) {
                 throw e;
+            }
+        } finally {
+            running.set(false);
+            if (serverSocket != null && !serverSocket.isClosed()) {
+                serverSocket.close();
             }
         }
     }
@@ -85,11 +99,5 @@ public class MarsHQServer implements AutoCloseable {
     @Override
     public void close() throws IOException {
         stop();
-    }
-
-    public static void main(String[] args) throws IOException {
-        try (MarsHQServer server = new MarsHQServer(DEFAULT_PORT)) {
-            server.start();
-        }
     }
 }
