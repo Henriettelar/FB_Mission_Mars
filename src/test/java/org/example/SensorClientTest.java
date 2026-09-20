@@ -13,6 +13,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class SensorClientTest {
@@ -36,6 +37,20 @@ class SensorClientTest {
             double value = Double.parseDouble(parts[1]);
             assertTrue(new SensorClient(sensorType).isInRange(value, sensorType));
         }
+    }
+
+    @Test
+    void resolvesSensorTypeFromNumericChoiceAndTypeText() {
+        assertEquals(SensorType.TEMPERATURE, SensorClient.resolveSensorTypeChoice("1"));
+        assertEquals(SensorType.OXYGEN, SensorClient.resolveSensorTypeChoice("O2"));
+        assertEquals(SensorType.AIR_PRESSURE, SensorClient.resolveSensorTypeChoice("tryk"));
+        assertEquals(SensorType.CO2, SensorClient.resolveSensorTypeChoice("4"));
+    }
+
+    @Test
+    void rejectsUnknownSensorTypeChoice() {
+        assertThrows(IllegalArgumentException.class, () -> SensorClient.resolveSensorTypeChoice("99"));
+        assertThrows(IllegalArgumentException.class, () -> SensorClient.resolveSensorTypeChoice("HUMIDITY"));
     }
 
     @Test
