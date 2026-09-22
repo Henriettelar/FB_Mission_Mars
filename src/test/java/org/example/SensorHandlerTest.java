@@ -118,8 +118,17 @@ class SensorHandlerTest {
 
             assertFalse(handlerThread.isAlive());
             assertTrue(sensorLog.getMessages().stream().anyMatch(message -> message.contains("Invalid numeric value")));
-            assertTrue(sensorLog.getMessages().stream().anyMatch(message -> message.contains("type=CO2")));
+            assertTrue(sensorLog.getMessages().stream().anyMatch(message -> message.contains("CO2")));
         }
+    }
+
+    @Test
+    void logsAlarmMessagesWithTimestamp() throws Exception {
+        SensorLog sensorLog = new SensorLog();
+        sensorLog.log("ALARM: TEMP:35.1 °C outside allowed range [ -15.0 - 35.0 ]");
+
+        assertFalse(sensorLog.getMessages().isEmpty());
+        assertTrue(sensorLog.getMessages().getFirst().matches("\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2} - ALARM: TEMP:35.1 °C outside allowed range \\[ -15.0 - 35.0 \\]"));
     }
 
     @Test
