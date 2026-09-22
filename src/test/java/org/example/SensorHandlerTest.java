@@ -17,34 +17,38 @@ class SensorHandlerTest {
 
     @Test
     void parsesTemperatureMessage() {
-        SensorHandler.ParsedMessage parsed = SensorHandler.parseMessage("TEMP:27.4");
+        SensorHandler.ParsedMessage parsed = SensorHandler.parseMessage("TEMP:27.4 °C");
 
         assertEquals(SensorType.TEMPERATURE, parsed.sensorType());
         assertEquals(27.4, parsed.value(), 0.0001);
+        assertEquals("°C", parsed.unit());
     }
 
     @Test
     void parsesOxygenMessage() {
-        SensorHandler.ParsedMessage parsed = SensorHandler.parseMessage("O2:21.5");
+        SensorHandler.ParsedMessage parsed = SensorHandler.parseMessage("O2:21.5 %");
 
         assertEquals(SensorType.OXYGEN, parsed.sensorType());
         assertEquals(21.5, parsed.value(), 0.0001);
+        assertEquals("%", parsed.unit());
     }
 
     @Test
     void parsesCo2Message() {
-        SensorHandler.ParsedMessage parsed = SensorHandler.parseMessage("CO2:2350");
+        SensorHandler.ParsedMessage parsed = SensorHandler.parseMessage("CO2:2350 ppm");
 
         assertEquals(SensorType.CO2, parsed.sensorType());
         assertEquals(2350.0, parsed.value(), 0.0001);
+        assertEquals("ppm", parsed.unit());
     }
 
     @Test
     void parsesTrykMessageAsAirPressure() {
-        SensorHandler.ParsedMessage parsed = SensorHandler.parseMessage("TRYK:1000");
+        SensorHandler.ParsedMessage parsed = SensorHandler.parseMessage("TRYK:1000 hPa");
 
         assertEquals(SensorType.AIR_PRESSURE, parsed.sensorType());
         assertEquals(1000.0, parsed.value(), 0.0001);
+        assertEquals("hPa", parsed.unit());
     }
 
     @Test
@@ -83,8 +87,8 @@ class SensorHandlerTest {
             writer.println("TEMP:abc");
             assertEquals("ERROR: Invalid numeric value", reader.readLine());
 
-            writer.println("CO2:2350");
-            assertEquals("ACK: CO2:2350", reader.readLine());
+            writer.println("CO2:2350 ppm");
+            assertEquals("ACK: CO2:2350 ppm", reader.readLine());
 
             client.close();
             handlerThread.join(2000);

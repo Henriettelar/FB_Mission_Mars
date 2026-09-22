@@ -30,12 +30,25 @@ class SensorClientTest {
     void generatedReadingUsesExpectedFormatAndRange() {
         for (SensorType sensorType : SensorType.values()) {
             String reading = new SensorClient(sensorType).generateReading();
-            String[] parts = reading.split(":");
+            String[] parts = reading.split(":", 2);
 
-            assertEquals(2, parts.length);
             assertEquals(sensorType.getType(), parts[0]);
-            double value = Double.parseDouble(parts[1]);
+            String[] valueAndUnit = parts[1].trim().split("\\s+");
+            assertEquals(2, valueAndUnit.length);
+            double value = Double.parseDouble(valueAndUnit[0]);
+            assertEquals(sensorType.getUnit(), valueAndUnit[1]);
             assertTrue(new SensorClient(sensorType).isInRange(value, sensorType));
+        }
+    }
+
+    @Test
+    void generatedValuesStayWithinIssueIntervals() {
+        for (SensorType sensorType : SensorType.values()) {
+            for (int i = 0; i < 100; i++) {
+                double generated = new SensorClient(sensorType).generateValue(sensorType);
+                assertTrue(sensorType.getMinValue() <= generated && generated <= sensorType.getMaxValue(),
+                        sensorType + " generated out-of-range value: " + generated);
+            }
         }
     }
 
@@ -81,7 +94,10 @@ class SensorClientTest {
             assertTrue(received.await(5, TimeUnit.SECONDS));
             assertNotNull(messageRef.get());
             assertTrue(messageRef.get().startsWith("TEMP:"));
-            double value = Double.parseDouble(messageRef.get().substring("TEMP:".length()));
+            String payload = messageRef.get().substring("TEMP:".length()).trim();
+            String[] valueAndUnit = payload.split("\\s+");
+            double value = Double.parseDouble(valueAndUnit[0]);
+            assertEquals(SensorType.TEMPERATURE.getUnit(), valueAndUnit[1]);
             assertTrue(new SensorClient(SensorType.TEMPERATURE).isInRange(value, SensorType.TEMPERATURE));
             serverThread.join(1000);
         }

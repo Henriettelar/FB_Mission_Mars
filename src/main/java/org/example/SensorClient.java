@@ -181,7 +181,7 @@ public class SensorClient implements AutoCloseable, Runnable {
         return value >= sensorType.getMinValue() && value <= sensorType.getMaxValue();
     }
     public String formatReading(double value, SensorType sensorType) {
-        return sensorType.getType() + ":" + String.format(Locale.US, "%.1f", value);
+        return sensorType.getType() + ":" + String.format(Locale.US, "%.1f", value) + " " + sensorType.getUnit();
     }
 
 }
