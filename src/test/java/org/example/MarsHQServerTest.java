@@ -104,6 +104,106 @@ class MarsHQServerTest {
         }
     }
 
+    @Test
+    void serverHandlesInvalidMessageFromOneClientAndContinuesWithOthers() throws Exception {
+        SensorLog sensorLog = new SensorLog();
+        MarsHQServer server = new MarsHQServer(0, sensorLog);
+        Thread serverThread = server.startAsync();
+
+        try {
+            waitFor(() -> server.isRunning() && server.getPort() > 0);
+            int port = server.getPort();
+
+            try (Socket firstClient = new Socket("localhost", port);
+                 PrintWriter firstWriter = new PrintWriter(firstClient.getOutputStream(), true);
+                 BufferedReader firstReader = new BufferedReader(new InputStreamReader(firstClient.getInputStream()))) {
+
+                firstWriter.println("INVALID:MESSAGE");
+                String errorResponse = firstReader.readLine();
+                assertTrue(errorResponse.startsWith("[ERROR]"));
+
+                firstWriter.println("TEMP:22.0 °C");
+                assertEquals("ACK: TEMP:22.0 °C", firstReader.readLine());
+            }
+
+            waitFor(() -> sensorLog.getMessages().stream().anyMatch(message -> message.contains("Client disconnected")));
+
+            try (Socket secondClient = new Socket("localhost", port);
+                 PrintWriter writer = new PrintWriter(secondClient.getOutputStream(), true);
+                 BufferedReader reader = new BufferedReader(new InputStreamReader(secondClient.getInputStream()))) {
+
+                writer.println("O2:21.0 %");
+                assertEquals("ACK: O2:21.0 %", reader.readLine());
+            }
+
+            assertTrue(server.isRunning());
+            assertTrue(sensorLog.getMessages().stream().anyMatch(message -> message.contains("[ERROR]")));
+        } finally {
+            server.stop();
+            serverThread.join(2000);
+        }
+    }
+
+    @Test
+    void serverHandlesInvalidNumericValueAndContinues() throws Exception {
+        SensorLog sensorLog = new SensorLog();
+        MarsHQServer server = new MarsHQServer(0, sensorLog);
+        Thread serverThread = server.startAsync();
+
+        try {
+            waitFor(() -> server.isRunning() && server.getPort() > 0);
+            int port = server.getPort();
+
+            try (Socket client = new Socket("localhost", port);
+                 PrintWriter writer = new PrintWriter(client.getOutputStream(), true);
+                 BufferedReader reader = new BufferedReader(new InputStreamReader(client.getInputStream()))) {
+
+                writer.println("TEMP:notanumber °C");
+                String errorResponse = reader.readLine();
+                assertEquals("[ERROR] Invalid numeric value", errorResponse);
+
+                writer.println("TEMP:23.5 °C");
+                assertEquals("ACK: TEMP:23.5 °C", reader.readLine());
+            }
+
+            assertTrue(sensorLog.getMessages().stream().anyMatch(message -> message.contains("Invalid numeric value")));
+        } finally {
+            server.stop();
+            serverThread.join(2000);
+        }
+    }
+
+    @Test
+    void serverHandlesClientAbruptDisconnect() throws Exception {
+        SensorLog sensorLog = new SensorLog();
+        MarsHQServer server = new MarsHQServer(0, sensorLog);
+        Thread serverThread = server.startAsync();
+
+        try {
+            waitFor(() -> server.isRunning() && server.getPort() > 0);
+            int port = server.getPort();
+
+            Socket client = new Socket("localhost", port);
+            client.close();
+
+            waitFor(() -> sensorLog.getMessages().stream().anyMatch(message -> 
+                message.contains("Client disconnected") || message.contains("Connection error")));
+
+            try (Socket secondClient = new Socket("localhost", port);
+                 PrintWriter writer = new PrintWriter(secondClient.getOutputStream(), true);
+                 BufferedReader reader = new BufferedReader(new InputStreamReader(secondClient.getInputStream()))) {
+
+                writer.println("TEMP:22.0 °C");
+                assertEquals("ACK: TEMP:22.0 °C", reader.readLine());
+            }
+
+            assertTrue(server.isRunning());
+        } finally {
+            server.stop();
+            serverThread.join(2000);
+        }
+    }
+
     private void waitFor(BooleanSupplier condition) throws InterruptedException {
         long deadline = System.currentTimeMillis() + 5000;
         while (System.currentTimeMillis() < deadline) {

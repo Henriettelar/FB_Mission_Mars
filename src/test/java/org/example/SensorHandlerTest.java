@@ -107,7 +107,7 @@ class SensorHandlerTest {
             handlerThread.start();
 
             writer.println("TEMP:abc");
-            assertEquals("ERROR: Invalid numeric value", reader.readLine());
+            assertEquals("[ERROR] Invalid numeric value", reader.readLine());
 
             writer.println("CO2:2350 ppm");
             String alarmResponse = reader.readLine();
@@ -119,6 +119,52 @@ class SensorHandlerTest {
             assertFalse(handlerThread.isAlive());
             assertTrue(sensorLog.getMessages().stream().anyMatch(message -> message.contains("Invalid numeric value")));
             assertTrue(sensorLog.getMessages().stream().anyMatch(message -> message.contains("CO2")));
+        }
+    }
+
+    @Test
+    void handlesEmptyMessageWithErrorFormat() throws Exception {
+        SensorLog sensorLog = new SensorLog();
+
+        try (ServerSocket serverSocket = new ServerSocket(0);
+             Socket client = new Socket("localhost", serverSocket.getLocalPort());
+             Socket serverSideClient = serverSocket.accept();
+             PrintWriter writer = new PrintWriter(client.getOutputStream(), true);
+             BufferedReader reader = new BufferedReader(new InputStreamReader(client.getInputStream()))) {
+
+            Thread handlerThread = new Thread(new SensorHandler(serverSideClient, sensorLog));
+            handlerThread.start();
+
+            writer.println("");
+            String response = reader.readLine();
+            assertEquals("[ERROR] Empty message", response);
+
+            client.close();
+            handlerThread.join(2000);
+            assertFalse(handlerThread.isAlive());
+        }
+    }
+
+    @Test
+    void handlesInvalidMessageFormatWithErrorFormat() throws Exception {
+        SensorLog sensorLog = new SensorLog();
+
+        try (ServerSocket serverSocket = new ServerSocket(0);
+             Socket client = new Socket("localhost", serverSocket.getLocalPort());
+             Socket serverSideClient = serverSocket.accept();
+             PrintWriter writer = new PrintWriter(client.getOutputStream(), true);
+             BufferedReader reader = new BufferedReader(new InputStreamReader(client.getInputStream()))) {
+
+            Thread handlerThread = new Thread(new SensorHandler(serverSideClient, sensorLog));
+            handlerThread.start();
+
+            writer.println("TEMP-27.4");
+            String response = reader.readLine();
+            assertEquals("[ERROR] Message must match TYPE:VALUE", response);
+
+            client.close();
+            handlerThread.join(2000);
+            assertFalse(handlerThread.isAlive());
         }
     }
 
