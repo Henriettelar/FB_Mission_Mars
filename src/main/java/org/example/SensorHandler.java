@@ -35,6 +35,16 @@ public class SensorHandler implements Runnable {
                 try {
                     ParsedMessage parsed = parseMessage(line);
                     sensorLog.log("Received from " + clientAddress + ": type=" + parsed.sensorType().getType() + ", value=" + parsed.value() + " " + parsed.unit());
+
+                    boolean inThreshold = parsed.sensorType().checkInThreshold(parsed.value());
+                    if (!inThreshold) {
+                        String alarmMessage = "ALARM: " + parsed.sensorType().getType() + ":" + parsed.valueText() + " " + parsed.unit() + " outside allowed range [" + parsed.sensorType().getMinThreshold() + " - " + parsed.sensorType().getMaxThreshold() + "]";
+                        sensorLog.log("Threshold alarm from " + clientAddress + ": " + alarmMessage);
+                        System.out.println("[ALARM: " + parsed.sensorType().getType() + ": " + parsed.valueText() + " " + parsed.unit() + "]");
+                        writer.println(alarmMessage);
+                        continue;
+                    }
+
                     writer.println("ACK: " + parsed.sensorType().getType() + ":" + parsed.valueText() + " " + parsed.unit());
                     System.out.println("[" + parsed.sensorType().getType() + ": " + parsed.valueText() + " " + parsed.unit() + "]");
                 } catch (NumberFormatException e) {

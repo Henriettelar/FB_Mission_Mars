@@ -52,6 +52,28 @@ class SensorHandlerTest {
     }
 
     @Test
+    void thresholdCheckAcceptsValuesWithinLimits() {
+        assertTrue(SensorType.TEMPERATURE.checkInThreshold(-15.0));
+        assertTrue(SensorType.TEMPERATURE.checkInThreshold(35.0));
+        assertTrue(SensorType.OXYGEN.checkInThreshold(19.0));
+        assertTrue(SensorType.OXYGEN.checkInThreshold(23.0));
+        assertTrue(SensorType.AIR_PRESSURE.checkInThreshold(800.0));
+        assertTrue(SensorType.AIR_PRESSURE.checkInThreshold(1100.0));
+        assertTrue(SensorType.CO2.checkInThreshold(2000.0));
+    }
+
+    @Test
+    void thresholdCheckRejectsCriticalValues() {
+        assertFalse(SensorType.TEMPERATURE.checkInThreshold(-15.1));
+        assertFalse(SensorType.TEMPERATURE.checkInThreshold(35.1));
+        assertFalse(SensorType.OXYGEN.checkInThreshold(18.9));
+        assertFalse(SensorType.OXYGEN.checkInThreshold(23.1));
+        assertFalse(SensorType.AIR_PRESSURE.checkInThreshold(799.9));
+        assertFalse(SensorType.AIR_PRESSURE.checkInThreshold(1100.1));
+        assertFalse(SensorType.CO2.checkInThreshold(2000.1));
+    }
+
+    @Test
     void rejectsInvalidMessageFormat() {
         assertThrows(IllegalArgumentException.class, () -> SensorHandler.parseMessage("TEMP-27.4"));
     }
@@ -88,7 +110,8 @@ class SensorHandlerTest {
             assertEquals("ERROR: Invalid numeric value", reader.readLine());
 
             writer.println("CO2:2350 ppm");
-            assertEquals("ACK: CO2:2350 ppm", reader.readLine());
+            String alarmResponse = reader.readLine();
+            assertTrue(alarmResponse.startsWith("ALARM: CO2:2350 ppm outside allowed range"));
 
             client.close();
             handlerThread.join(2000);
@@ -96,6 +119,29 @@ class SensorHandlerTest {
             assertFalse(handlerThread.isAlive());
             assertTrue(sensorLog.getMessages().stream().anyMatch(message -> message.contains("Invalid numeric value")));
             assertTrue(sensorLog.getMessages().stream().anyMatch(message -> message.contains("type=CO2")));
+        }
+    }
+
+    @Test
+    void sendsAlarmWhenReadingIsOutsideThreshold() throws Exception {
+        SensorLog sensorLog = new SensorLog();
+
+        try (ServerSocket serverSocket = new ServerSocket(0);
+             Socket client = new Socket("localhost", serverSocket.getLocalPort());
+             Socket serverSideClient = serverSocket.accept();
+             PrintWriter writer = new PrintWriter(client.getOutputStream(), true);
+             BufferedReader reader = new BufferedReader(new InputStreamReader(client.getInputStream()))) {
+
+            Thread handlerThread = new Thread(new SensorHandler(serverSideClient, sensorLog));
+            handlerThread.start();
+
+            writer.println("TEMP:-15.1 °C");
+            String response = reader.readLine();
+            assertTrue(response.startsWith("ALARM: TEMP:-15.1 °C outside allowed range"));
+
+            client.close();
+            handlerThread.join(2000);
+            assertTrue(sensorLog.getMessages().stream().anyMatch(message -> message.contains("Threshold alarm")));
         }
     }
 }
