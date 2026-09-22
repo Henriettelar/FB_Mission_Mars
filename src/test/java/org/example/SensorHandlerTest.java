@@ -53,24 +53,24 @@ class SensorHandlerTest {
 
     @Test
     void thresholdCheckAcceptsValuesWithinLimits() {
-        assertTrue(SensorType.TEMPERATURE.checkInThreshold(-15.0));
-        assertTrue(SensorType.TEMPERATURE.checkInThreshold(35.0));
-        assertTrue(SensorType.OXYGEN.checkInThreshold(19.0));
-        assertTrue(SensorType.OXYGEN.checkInThreshold(23.0));
-        assertTrue(SensorType.AIR_PRESSURE.checkInThreshold(800.0));
-        assertTrue(SensorType.AIR_PRESSURE.checkInThreshold(1100.0));
-        assertTrue(SensorType.CO2.checkInThreshold(2000.0));
+        assertTrue(SensorHandler.checkInThreshold(SensorType.TEMPERATURE, -15.0));
+        assertTrue(SensorHandler.checkInThreshold(SensorType.TEMPERATURE, 35.0));
+        assertTrue(SensorHandler.checkInThreshold(SensorType.OXYGEN, 19.0));
+        assertTrue(SensorHandler.checkInThreshold(SensorType.OXYGEN, 23.0));
+        assertTrue(SensorHandler.checkInThreshold(SensorType.AIR_PRESSURE, 800.0));
+        assertTrue(SensorHandler.checkInThreshold(SensorType.AIR_PRESSURE, 1100.0));
+        assertTrue(SensorHandler.checkInThreshold(SensorType.CO2, 2000.0));
     }
 
     @Test
     void thresholdCheckRejectsCriticalValues() {
-        assertFalse(SensorType.TEMPERATURE.checkInThreshold(-15.1));
-        assertFalse(SensorType.TEMPERATURE.checkInThreshold(35.1));
-        assertFalse(SensorType.OXYGEN.checkInThreshold(18.9));
-        assertFalse(SensorType.OXYGEN.checkInThreshold(23.1));
-        assertFalse(SensorType.AIR_PRESSURE.checkInThreshold(799.9));
-        assertFalse(SensorType.AIR_PRESSURE.checkInThreshold(1100.1));
-        assertFalse(SensorType.CO2.checkInThreshold(2000.1));
+        assertFalse(SensorHandler.checkInThreshold(SensorType.TEMPERATURE, -15.1));
+        assertFalse(SensorHandler.checkInThreshold(SensorType.TEMPERATURE, 35.1));
+        assertFalse(SensorHandler.checkInThreshold(SensorType.OXYGEN, 18.9));
+        assertFalse(SensorHandler.checkInThreshold(SensorType.OXYGEN, 23.1));
+        assertFalse(SensorHandler.checkInThreshold(SensorType.AIR_PRESSURE, 799.9));
+        assertFalse(SensorHandler.checkInThreshold(SensorType.AIR_PRESSURE, 1100.1));
+        assertFalse(SensorHandler.checkInThreshold(SensorType.CO2, 2000.1));
     }
 
     @Test

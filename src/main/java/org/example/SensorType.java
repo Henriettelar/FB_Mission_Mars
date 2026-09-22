@@ -46,13 +46,6 @@ public enum SensorType {
         return maxThreshold;
     }
 
-    public boolean checkInThreshold(double value) {
-        if (this == CO2) {
-            return value <= maxThreshold;
-        }
-        return value >= minThreshold && value <= maxThreshold;
-    }
-
     public static SensorType fromMessageType(String messageType) {
         if (messageType == null || messageType.isBlank()) {
             throw new IllegalArgumentException("Sensor type is missing");
