@@ -42,10 +42,12 @@ public class SensorClient implements AutoCloseable, Runnable {
         this.port = port;
     }
 
+    //Til test for at sikre at sensortypen forbliver den samme under sessionen
     public SensorType getSensorType() {
         return sensorType;
     }
 
+    //Laver tilfældig måling ud fra sensorens type
     public String generateReading() {
         double value = generateValue(sensorType);
         return formatReading(value, sensorType);

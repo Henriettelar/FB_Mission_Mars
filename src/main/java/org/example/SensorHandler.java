@@ -23,6 +23,7 @@ public class SensorHandler implements Runnable {
 
             String clientAddress = clientSocket.getRemoteSocketAddress().toString();
             sensorLog.log("Connected sensor: " + clientAddress);
+            System.out.println("Sensor connected");
 
             String line;
             while ((line = reader.readLine()) != null) {
@@ -38,7 +39,7 @@ public class SensorHandler implements Runnable {
 
                     boolean inThreshold = checkInThreshold(parsed.sensorType(), parsed.value());
                     if (!inThreshold) {
-                        String alarmMessage = "ALARM: " + parsed.sensorType().getType() + ":" + parsed.valueText() + " " + parsed.unit() + " outside allowed range [" + parsed.sensorType().getMinThreshold() + " - " + parsed.sensorType().getMaxThreshold() + "]";
+                        String alarmMessage = buildAlarmMessage(parsed.sensorType(), parsed.valueText(), parsed.unit());
                         sensorLog.log("Threshold alarm from " + clientAddress + ": " + alarmMessage);
                         System.out.println("[ALARM: " + parsed.sensorType().getType() + ": " + parsed.valueText() + " " + parsed.unit() + "]");
                         writer.println(alarmMessage);
@@ -60,6 +61,18 @@ public class SensorHandler implements Runnable {
         } catch (IOException e) {
             sensorLog.log("Connection error for client " + clientSocket.getRemoteSocketAddress() + ": " + e.getMessage());
         }
+    }
+
+    static String buildAlarmMessage(SensorType sensorType, String valueText, String unit) {
+        if (sensorType == null) {
+            throw new IllegalArgumentException("Sensor type cannot be null");
+        }
+
+        String rangeText = sensorType == SensorType.CO2
+                ? "< " + sensorType.getMaxThreshold()
+                : sensorType.getMinThreshold() + " - " + sensorType.getMaxThreshold();
+
+        return "ALARM: " + sensorType.getType() + ":" + valueText + " " + unit + " outside allowed range [" + rangeText + "]";
     }
 
     static boolean checkInThreshold(SensorType sensorType, double value) {
