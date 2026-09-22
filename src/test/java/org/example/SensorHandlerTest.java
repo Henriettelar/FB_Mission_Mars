@@ -123,6 +123,15 @@ class SensorHandlerTest {
     }
 
     @Test
+    void logsAlarmMessagesWithTimestamp() throws Exception {
+        SensorLog sensorLog = new SensorLog();
+        sensorLog.log("ALARM: TEMP:35.1 °C outside allowed range [ -15.0 - 35.0 ]");
+
+        assertFalse(sensorLog.getMessages().isEmpty());
+        assertTrue(sensorLog.getMessages().getFirst().matches("\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2} - ALARM: TEMP:35.1 °C outside allowed range \\[ -15.0 - 35.0 \\]"));
+    }
+
+    @Test
     void sendsAlarmWhenReadingIsOutsideThreshold() throws Exception {
         SensorLog sensorLog = new SensorLog();
 
