@@ -70,8 +70,12 @@ public class SensorHandler implements Runnable {
         }
 
         String[] tokens = valuePart.split("\\s+");
+        if (tokens.length > 2) {
+            throw new IllegalArgumentException("Message must match TYPE:VALUE [UNIT]");
+        }
+
         String numericPart = tokens[0];
-        String unitPart = tokens.length > 1 ? tokens[1].trim() : "";
+        String unitPart = tokens.length > 1 ? tokens[1] : "";
 
         SensorType sensorType = SensorType.fromMessageType(typePart);
         double value = Double.parseDouble(numericPart);
