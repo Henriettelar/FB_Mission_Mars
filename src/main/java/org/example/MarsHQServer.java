@@ -6,6 +6,7 @@ import java.net.Socket;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class MarsHQServer implements AutoCloseable {
@@ -36,30 +37,49 @@ public class MarsHQServer implements AutoCloseable {
 
     public void start() throws IOException {
         if (executorService.isShutdown()) {
-            throw new IllegalStateException("Server has been stopped and cannot be restarted.");
+            String errorMsg = "[ERROR] Server has been stopped and cannot be restarted.";
+            System.err.println(errorMsg);
+            throw new IllegalStateException(errorMsg);
         }
         if (running.getAndSet(true)) {
-            throw new IllegalStateException("Server is already running.");
+            String errorMsg = "[ERROR] Server is already running.";
+            System.err.println(errorMsg);
+            throw new IllegalStateException(errorMsg);
         }
-
 
         try {
             serverSocket = new ServerSocket(port);
             sensorLog.log("Mars HQ server started on port " + serverSocket.getLocalPort());
             System.out.println("Mars HQ server started on port " + serverSocket.getLocalPort());
             while (running.get()) {
-                Socket clientSocket = serverSocket.accept();
-                executorService.submit(new SensorHandler(clientSocket, sensorLog));
-
+                try {
+                    Socket clientSocket = serverSocket.accept();
+                    executorService.submit(new SensorHandler(clientSocket, sensorLog));
+                } catch (IOException e) {
+                    if (running.get()) {
+                        String errorMsg = "[ERROR] Error accepting client connection: " + e.getMessage();
+                        sensorLog.log(errorMsg);
+                        System.err.println(errorMsg);
+                    }
+                }
             }
         } catch (IOException e) {
             if (running.get()) {
+                String errorMsg = "[ERROR] Server socket error: " + e.getMessage();
+                sensorLog.log(errorMsg);
+                System.err.println(errorMsg);
                 throw e;
             }
         } finally {
             running.set(false);
             if (serverSocket != null && !serverSocket.isClosed()) {
-                serverSocket.close();
+                try {
+                    serverSocket.close();
+                } catch (IOException e) {
+                    String errorMsg = "[ERROR] Error closing server socket: " + e.getMessage();
+                    sensorLog.log(errorMsg);
+                    System.err.println(errorMsg);
+                }
             }
         }
     }
@@ -94,10 +114,28 @@ public class MarsHQServer implements AutoCloseable {
         running.set(false);
 
         if (serverSocket != null && !serverSocket.isClosed()) {
-            serverSocket.close();
+            try {
+                serverSocket.close();
+            } catch (IOException e) {
+                String errorMsg = "[ERROR] Error closing server socket: " + e.getMessage();
+                sensorLog.log(errorMsg);
+                System.err.println(errorMsg);
+                throw e;
+            }
         }
 
-        executorService.shutdownNow();
+        executorService.shutdown();
+        try {
+            if (!executorService.awaitTermination(10, java.util.concurrent.TimeUnit.SECONDS)) {
+                String errorMsg = "[ERROR] ExecutorService did not terminate within timeout, forcing shutdown";
+                sensorLog.log(errorMsg);
+                System.err.println(errorMsg);
+                executorService.shutdownNow();
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            executorService.shutdownNow();
+        }
     }
 
     @Override

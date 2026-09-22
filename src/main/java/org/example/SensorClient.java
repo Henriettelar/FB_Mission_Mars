@@ -103,7 +103,9 @@ public class SensorClient implements AutoCloseable, Runnable {
         try {
             start();
         } catch (IOException e) {
-            throw new RuntimeException("Sensor client failed to communicate with server", e);
+            System.err.println("[ERROR] Sensor client failed to communicate with server: " + e.getMessage());
+            System.err.println("[ERROR] Host: " + host + ", Port: " + port);
+            System.err.println("[ERROR] Cause: " + e.getClass().getSimpleName());
         }
     }
 

@@ -17,19 +17,21 @@ public class SensorHandler implements Runnable {
 
     @Override
     public void run() {
+        String clientAddress = "unknown";
         try (Socket ignored = clientSocket;
              BufferedReader reader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
              PrintWriter writer = new PrintWriter(clientSocket.getOutputStream(), true)) {
 
-            String clientAddress = clientSocket.getRemoteSocketAddress().toString();
+            clientAddress = clientSocket.getRemoteSocketAddress().toString();
             sensorLog.log("Connected sensor: " + clientAddress);
             System.out.println("Sensor connected");
 
             String line;
             while ((line = reader.readLine()) != null) {
                 if (line.isBlank()) {
-                    sensorLog.log("Invalid message from " + clientAddress + ": empty message");
-                    writer.println("ERROR: Empty message");
+                    String errorMsg = "[ERROR] Empty message";
+                    sensorLog.log(errorMsg + " from " + clientAddress);
+                    writer.println(errorMsg);
                     continue;
                 }
 
@@ -49,17 +51,25 @@ public class SensorHandler implements Runnable {
                     writer.println("ACK: " + parsed.sensorType().getType() + ":" + parsed.valueText() + " " + parsed.unit());
                     System.out.println("[" + ANSI_GREEN + parsed.sensorType().getType() + ANSI_RESET + ": " + parsed.valueText() + " " + parsed.unit() + "]");
                 } catch (NumberFormatException e) {
-                    sensorLog.log("Invalid numeric value from " + clientAddress + ": " + line);
-                    writer.println("ERROR: Invalid numeric value");
+                    String errorMsg = "[ERROR] Invalid numeric value";
+                    sensorLog.log(errorMsg + " from " + clientAddress + ": " + line);
+                    writer.println(errorMsg);
                 } catch (IllegalArgumentException e) {
-                    sensorLog.log("Invalid message from " + clientAddress + ": " + line + " (" + e.getMessage() + ")");
-                    writer.println("ERROR: " + e.getMessage());
+                    String errorMsg = "[ERROR] " + e.getMessage();
+                    sensorLog.log(errorMsg + " from " + clientAddress + ": " + line);
+                    writer.println(errorMsg);
                 }
             }
 
             sensorLog.log("Client disconnected: " + clientAddress);
         } catch (IOException e) {
-            sensorLog.log("Connection error for client " + clientSocket.getRemoteSocketAddress() + ": " + e.getMessage());
+            String errorMsg = "[ERROR] Connection error: " + e.getMessage();
+            sensorLog.log(errorMsg + " for client " + clientAddress);
+            System.err.println(errorMsg);
+        } catch (Exception e) {
+            String errorMsg = "[ERROR] Unexpected error: " + e.getMessage();
+            sensorLog.log(errorMsg + " for client " + clientAddress);
+            System.err.println(errorMsg);
         }
     }
 
