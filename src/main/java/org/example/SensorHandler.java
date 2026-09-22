@@ -35,19 +35,19 @@ public class SensorHandler implements Runnable {
 
                 try {
                     ParsedMessage parsed = parseMessage(line);
-                    sensorLog.log("Received from " + clientAddress + ": type=" + parsed.sensorType().getType() + ", value=" + parsed.value() + " " + parsed.unit());
+                    sensorLog.log("Received DATA from " + clientAddress + ": [" + parsed.sensorType().getType() + ": " + parsed.valueText() + " " + parsed.unit() + "]");
 
                     boolean inThreshold = checkInThreshold(parsed.sensorType(), parsed.value());
                     if (!inThreshold) {
                         String alarmMessage = buildAlarmMessage(parsed.sensorType(), parsed.valueText(), parsed.unit());
                         sensorLog.log("Threshold alarm from " + clientAddress + ": " + alarmMessage);
-                        System.out.println("[ALARM: " + parsed.sensorType().getType() + ": " + parsed.valueText() + " " + parsed.unit() + "]");
+                        System.out.println(ANSI_RED + "[ALARM: " + parsed.sensorType().getType() + ": " + parsed.valueText() + " " + parsed.unit() + "]" + ANSI_RESET);
                         writer.println(alarmMessage);
                         continue;
                     }
 
                     writer.println("ACK: " + parsed.sensorType().getType() + ":" + parsed.valueText() + " " + parsed.unit());
-                    System.out.println("[" + parsed.sensorType().getType() + ": " + parsed.valueText() + " " + parsed.unit() + "]");
+                    System.out.println("[" + ANSI_GREEN + parsed.sensorType().getType() + ANSI_RESET + ": " + parsed.valueText() + " " + parsed.unit() + "]");
                 } catch (NumberFormatException e) {
                     sensorLog.log("Invalid numeric value from " + clientAddress + ": " + line);
                     writer.println("ERROR: Invalid numeric value");
@@ -125,4 +125,10 @@ public class SensorHandler implements Runnable {
 
     record ParsedMessage(SensorType sensorType, double value, String valueText, String unit) {
     }
+
+    public static final String ANSI_RESET = "\u001B[0m";
+
+    public static final String ANSI_RED = "\u001B[31m";
+    public static final String ANSI_GREEN = "\u001B[32m";
+
 }

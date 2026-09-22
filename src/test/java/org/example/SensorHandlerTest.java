@@ -118,7 +118,7 @@ class SensorHandlerTest {
 
             assertFalse(handlerThread.isAlive());
             assertTrue(sensorLog.getMessages().stream().anyMatch(message -> message.contains("Invalid numeric value")));
-            assertTrue(sensorLog.getMessages().stream().anyMatch(message -> message.contains("type=CO2")));
+            assertTrue(sensorLog.getMessages().stream().anyMatch(message -> message.contains("CO2")));
         }
     }
 

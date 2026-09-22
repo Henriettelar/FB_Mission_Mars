@@ -30,7 +30,7 @@ class MarsHQServerTest {
                 assertEquals("ACK: TEMP:22.1 °C", reader.readLine());
             }
 
-            assertTrue(sensorLog.getMessages().stream().anyMatch(message -> message.contains("Received from")));
+            assertTrue(sensorLog.getMessages().stream().anyMatch(message -> message.contains("Received DATA from")));
         } finally {
             server.stop();
             serverThread.join(2000);
@@ -61,7 +61,7 @@ class MarsHQServerTest {
                 assertEquals("ACK: PRESSURE:1012 hPa", secondReader.readLine());
             }
 
-            assertTrue(sensorLog.getMessages().stream().filter(message -> message.contains("Received from")).count() >= 2);
+            assertTrue(sensorLog.getMessages().stream().filter(message -> message.contains("Received DATA from")).count() >= 2);
         } finally {
             server.stop();
             serverThread.join(2000);
