@@ -1,10 +1,10 @@
 package org.example;
 
 public enum SensorType {
-    TEMPERATURE("TEMP", -50.0, 80.0),
-    OXYGEN("O2", 0.0, 100.0),
-    AIR_PRESSURE("PRESSURE", 950.0, 1050.0),
-    CO2("CO2", 300.0, 5000.0);
+    TEMPERATURE("TEMP", -30.0, 50.0),
+    OXYGEN("O2", 15.0, 28.0),
+    AIR_PRESSURE("PRESSURE", 500.0, 1400.0),
+    CO2("CO2", 1800.0, 2200.0);
 
     private final String type;
     private final double minValue;

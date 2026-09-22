@@ -40,6 +40,17 @@ class SensorClientTest {
     }
 
     @Test
+    void generatedValuesStayWithinIssueIntervals() {
+        for (SensorType sensorType : SensorType.values()) {
+            for (int i = 0; i < 100; i++) {
+                double generated = new SensorClient(sensorType).generateValue(sensorType);
+                assertTrue(sensorType.getMinValue() <= generated && generated <= sensorType.getMaxValue(),
+                        sensorType + " generated out-of-range value: " + generated);
+            }
+        }
+    }
+
+    @Test
     void resolvesSensorTypeFromNumericChoiceAndTypeText() {
         assertEquals(SensorType.TEMPERATURE, SensorClient.resolveSensorTypeChoice("1"));
         assertEquals(SensorType.OXYGEN, SensorClient.resolveSensorTypeChoice("O2"));
