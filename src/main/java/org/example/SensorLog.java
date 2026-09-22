@@ -1,12 +1,9 @@
 package org.example;
 
 import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -15,15 +12,14 @@ import java.util.List;
 
 public class SensorLog {
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-    private static final Path LOG_DIRECTORY = Paths.get("sensorDataLog");
-    private static final Path LOG_FILE = LOG_DIRECTORY.resolve("mars.log");
+    private static final String LOG_DIRECTORY = "sensorDataLog";
+    private static final String LOG_FILE = LOG_DIRECTORY + File.separator + "mars.log";
     private final List<String> messages = new ArrayList<>();
 
     public SensorLog() {
-        try {
-            Files.createDirectories(LOG_DIRECTORY);
-        } catch (IOException e) {
-            throw new IllegalStateException("Could not create sensor log directory", e);
+        File directory = new File(LOG_DIRECTORY);
+        if (!directory.exists()) {
+            directory.mkdirs();
         }
     }
 
@@ -45,21 +41,19 @@ public class SensorLog {
         synchronized (messages) {
             messages.clear();
         }
-        try {
-            Files.deleteIfExists(LOG_FILE);
-        } catch (IOException e) {
-            throw new IllegalStateException("Could not clear sensor log file", e);
+
+        File logFile = new File(LOG_FILE);
+        if (logFile.exists()) {
+            logFile.delete();
         }
     }
 
     private void appendToFile(String message) {
-        try (BufferedWriter writer = Files.newBufferedWriter(
-                LOG_FILE,
-                StandardCharsets.UTF_8,
-                StandardOpenOption.CREATE,
-                StandardOpenOption.APPEND)) {
-            writer.write(message);
-            writer.newLine();
+        try {
+            BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(LOG_FILE, true));
+            bufferedWriter.write(message);
+            bufferedWriter.newLine();
+            bufferedWriter.close();
         } catch (IOException e) {
             throw new IllegalStateException("Could not write to sensor log file", e);
         }
