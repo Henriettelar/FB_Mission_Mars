@@ -9,7 +9,6 @@ import java.net.Socket;
 public class SensorHandler implements Runnable {
     private final Socket clientSocket;
     private final SensorLog sensorLog;
-    private static int clientCounter = 0;
 
     public SensorHandler(Socket clientSocket, SensorLog sensorLog) {
         this.clientSocket = clientSocket;

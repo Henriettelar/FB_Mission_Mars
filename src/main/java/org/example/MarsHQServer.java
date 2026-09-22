@@ -46,6 +46,7 @@ public class MarsHQServer implements AutoCloseable {
         try {
             serverSocket = new ServerSocket(port);
             sensorLog.log("Mars HQ server started on port " + serverSocket.getLocalPort());
+            System.out.println("Mars HQ server started on port " + serverSocket.getLocalPort());
             while (running.get()) {
                 Socket clientSocket = serverSocket.accept();
                 executorService.submit(new SensorHandler(clientSocket, sensorLog));
@@ -63,6 +64,7 @@ public class MarsHQServer implements AutoCloseable {
         }
     }
 
+    //Til test af start server asynkront
     public Thread startAsync() {
         Thread serverThread = new Thread(() -> {
             try {
