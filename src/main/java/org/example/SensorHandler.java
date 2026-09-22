@@ -34,9 +34,9 @@ public class SensorHandler implements Runnable {
 
                 try {
                     ParsedMessage parsed = parseMessage(line);
-                    sensorLog.log("Received from " + clientAddress + ": type=" + parsed.sensorType().getType() + ", value=" + parsed.value());
-                    writer.println("ACK: " + parsed.sensorType().getType() + ":" + parsed.valueText());
-                    System.out.println("[" + parsed.sensorType().getType() + ":" + parsed.valueText() + "]");
+                    sensorLog.log("Received from " + clientAddress + ": type=" + parsed.sensorType().getType() + ", value=" + parsed.value() + " " + parsed.unit());
+                    writer.println("ACK: " + parsed.sensorType().getType() + ":" + parsed.valueText() + " " + parsed.unit());
+                    System.out.println("[" + parsed.sensorType().getType() + ": " + parsed.valueText() + " " + parsed.unit() + "]");
                 } catch (NumberFormatException e) {
                     sensorLog.log("Invalid numeric value from " + clientAddress + ": " + line);
                     writer.println("ERROR: Invalid numeric value");
@@ -69,11 +69,21 @@ public class SensorHandler implements Runnable {
             throw new IllegalArgumentException("Message must contain a value");
         }
 
+        String[] tokens = valuePart.split("\\s+");
+        String numericPart = tokens[0];
+        String unitPart = tokens.length > 1 ? tokens[1].trim() : "";
+
         SensorType sensorType = SensorType.fromMessageType(typePart);
-        double value = Double.parseDouble(valuePart);
-        return new ParsedMessage(sensorType, value, valuePart);
+        double value = Double.parseDouble(numericPart);
+        String unit = unitPart.isEmpty() ? sensorType.getUnit() : unitPart;
+
+        if (!unitPart.isEmpty() && !sensorType.getUnit().equals(unitPart)) {
+            throw new IllegalArgumentException("Wrong unit for sensor type");
+        }
+
+        return new ParsedMessage(sensorType, value, numericPart, unit);
     }
 
-    record ParsedMessage(SensorType sensorType, double value, String valueText) {
+    record ParsedMessage(SensorType sensorType, double value, String valueText, String unit) {
     }
 }
